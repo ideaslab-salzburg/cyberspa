@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberSpa Island – Deine Inselreise</title>
+<style>
+  :root {
+    --sea:#0e6868; --sea2:#168b83; --lagoon:#a9d9c9; --foam:#edf6e9;
+    --sand:#f3e5c5; --sand2:#e5c994; --ink:#183e3c; --muted:#56736b;
+    --coral:#e58c68; --sun:#f4c96b; --white:#fffdf5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--ink);font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,sans-serif;
+    /* Optionales Hintergrundbild: strand.jpg neben dieser HTML-Datei ablegen. */
+    background:linear-gradient(180deg,rgba(191,229,219,.70),rgba(244,232,201,.72)),
+      url("strand.jpg") center center / cover fixed,
+      linear-gradient(180deg,#bfe5db 0%,#d9eee1 48%,#f4e8c9 100%);}
+
+  .shell{width:min(1120px,calc(100% - 28px));margin:22px auto 28px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 auto 16px;max-width:980px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:52px;height:52px;border-radius:17px;background:var(--sea);display:grid;place-items:center;color:white;font-size:25px;box-shadow:0 5px 0 #0a5050;overflow:hidden;flex:0 0 auto}
+  .brand-mark img{width:100%;height:100%;object-fit:cover;display:block}
+  .eyebrow{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--sea)}
+  h1{font-size:clamp(1.25rem,3.2vw,2.1rem);line-height:1.05;margin:3px 0 0}
+  .sound-toggle{border:1px solid #b6d5c8;background:#f8fbef;color:var(--ink);border-radius:999px;padding:11px 15px;font:inherit;font-weight:750;cursor:pointer;white-space:nowrap}
+  .sound-toggle[aria-pressed="true"]{background:#d5eee0;border-color:var(--sea)}
+  .island-card{position:relative;overflow:hidden;max-width:980px;margin:auto;border:2px solid rgba(255,255,255,.8);border-radius:30px;background:rgba(255,253,245,.94);box-shadow:0 18px 45px rgba(20,85,72,.13)}
+  .top-panel{text-align:center;padding:clamp(22px,4vw,38px) 22px 14px}
+  .top-panel .eyebrow{color:#b66b4b}
+  h2{font-size:clamp(1.7rem,4vw,2.8rem);margin:7px 0 7px;letter-spacing:-.035em}
+  .subtitle{color:var(--muted);margin:0 auto;max-width:580px;line-height:1.5}
+  .map{position:relative;margin:8px auto 0;width:min(820px,100%);padding:12px 16px 2px}
+  .route-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .stations{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:start}
+  .station{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;position:relative;z-index:1}
+  .island{width:clamp(66px,10vw,104px);aspect-ratio:1;border-radius:42% 58% 50% 50% / 52% 42% 58% 48%;background:#d7e8bd;border:3px solid #b6d7a6;display:grid;place-items:center;position:relative;isolation:isolate;transition:transform .4s,background .4s,border-color .4s,box-shadow .4s;box-shadow:0 5px 0 #a5c894;overflow:visible}
+  .station-image{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;border-radius:inherit;z-index:1;border:3px solid rgba(255,255,255,.72)}
+  .station .symbol{position:relative;z-index:1}
+  .island:before{content:"";position:absolute;inset:7px;border:1px dashed rgba(34,104,79,.32);border-radius:inherit}
+  .station:nth-child(2) .island{background:#f4df9e;border-color:#e8c66f;box-shadow:0 5px 0 #d9b65e}
+  .station:nth-child(3) .island{background:#f4c9a6;border-color:#e8a17d;box-shadow:0 5px 0 #d68c69}
+  .station:nth-child(4) .island{background:#c5e3c0;border-color:#9fcf9e;box-shadow:0 5px 0 #8cbd8c}
+  .station:nth-child(5) .island{background:#d4d3b8;border-color:#b9bd91;box-shadow:0 5px 0 #a1a77a}
+  .station.active .island{transform:translateY(-10px) scale(1.13);border:5px solid #fffdf5;box-shadow:0 8px 0 var(--sea),0 0 0 5px var(--sea2),0 0 0 10px rgba(22,139,131,.20);z-index:3}
+  .station.active .station-name{color:#075b58;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+  .station.active .station-number{color:#08736d}
+  .station.done .island{background:#b4e1d4;border:4px solid #168b83;box-shadow:0 5px 0 #0e6868,0 0 0 3px rgba(22,139,131,.16)}
+  .station.done .island:after{content:"✓";position:absolute;z-index:4;right:-5px;top:-7px;width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:#0e6868;color:white;border:2px solid #fffdf5;font-size:14px;font-weight:900;box-shadow:0 2px 5px #315f56}
+  .station.done .station-name{color:#176d62}
+  .station.done .station-state{color:#176d62;font-weight:800}
+  .symbol{font-size:clamp(1.7rem,4vw,2.5rem);line-height:1;z-index:1}
+  .station-number{font-size:.69rem;letter-spacing:.12em;font-weight:850;color:#5b796b;margin-top:13px}
+  .station-name{font-size:clamp(.72rem,1.6vw,.95rem);font-weight:850;margin-top:3px;line-height:1.2}
+  .station-state{font-size:.68rem;color:var(--muted);margin-top:5px;min-height:1em}
+  .route-wrap{padding:20px clamp(18px,5vw,52px) 27px}
+  .route-labels{display:flex;justify-content:space-between;gap:10px;font-size:.75rem;color:var(--muted);font-weight:750;margin-bottom:9px}
+  .track{height:22px;border-radius:999px;background:#e7dfc8;border:2px solid #fff8e8;overflow:hidden;box-shadow:inset 0 2px 4px #b9ad90,0 3px 0 rgba(100,111,78,.12)}
+  .fill{height:100%;width:0%;border-radius:inherit;background:linear-gradient(90deg,#3da99a,#168b83 65%,#f0c36c);transition:width .8s linear;box-shadow:inset 0 2px 2px rgba(255,255,255,.35)}
+  .lower{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;padding:0 clamp(16px,4vw,36px) 28px}
+  .now-card,.controls-card{border-radius:22px;padding:20px;background:#f4f0df;border:1px solid #e4ddc5}
+  .controls-card{position:relative;padding-top:24px}
+  .reset-mini{position:absolute;top:10px;right:13px;border:0;background:transparent;color:#8a9586;font-size:.72rem;text-decoration:underline;text-underline-offset:3px;padding:4px 2px;cursor:pointer}
+  .reset-mini:hover{color:var(--sea)}
+  .now-card{background:#e8f3e8}
+  .small-label{text-transform:uppercase;letter-spacing:.15em;font-size:.7rem;font-weight:850;color:var(--sea)}
+  .current-name{font-size:1.45rem;font-weight:900;margin:6px 0}
+  .prompt{color:var(--muted);line-height:1.45;font-size:.92rem}
+  .buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px;padding-right:54px}
+  button{font:inherit}
+  .primary,.secondary{border:0;border-radius:999px;padding:12px 18px;font-weight:850;cursor:pointer;transition:transform .15s,opacity .15s}
+  .primary{background:var(--sea);color:white;box-shadow:0 4px 0 #084e4d}
+  .secondary{background:#fffdf5;color:var(--ink);border:1px solid #d6ceb5}
+  button:hover{transform:translateY(-1px)}
+  button:focus-visible{outline:3px solid var(--coral);outline-offset:3px}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .status{font-size:.82rem;color:var(--muted);margin-top:12px;min-height:1.2em}
+  .end-message{display:none;margin:0 22px 24px;text-align:center;border-radius:18px;padding:16px;background:#dff0df;color:var(--ink);font-weight:750}
+  .end-message.show{display:block}
+  footer{text-align:center;font-size:.75rem;color:#4e776b;padding:16px 10px 0}
+  .sound-note{font-size:.75rem;color:var(--muted);line-height:1.45;margin-top:10px}
+  @media(max-width:640px){
+    .shell{width:calc(100% - 16px);margin:12px auto 20px}
+    header{align-items:flex-start}
+    .brand-mark{width:40px;height:40px;font-size:21px;border-radius:14px}
+    .station.active .island{transform:translateY(-6px) scale(1.07)}
+    .track{height:20px}
+    .sound-toggle{padding:9px 11px;font-size:.8rem}
+    .island-card{border-radius:22px}
+    .map{padding:10px 4px 0}
+    .stations{gap:2px}
+    .island{width:clamp(48px,15vw,76px);border-width:2px}
+    .island:before{inset:4px}
+    .station-number{font-size:.58rem;margin-top:11px}
+    .station-name{font-size:.68rem;overflow-wrap:anywhere}
+    .station-state{font-size:.59rem}
+    .lower{grid-template-columns:1fr}
+    .route-wrap{padding:18px 18px 20px}
+    .top-panel{padding-left:15px;padding-right:15px}
+  }
+  @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
+
+  /* --- CyberSpa Projektlook: Koralle, Pink, Creme und Navigator-Blau --- */
+  :root{
+    --sea:#104b78;
+    --sea2:#287db0;
+    --lagoon:#f08b9b;
+    --foam:#fff0e6;
+    --sand:#fff0e6;
+    --sand2:#f4c2b7;
+    --ink:#123f68;
+    --muted:#55728d;
+    --coral:#ed5572;
+    --sun:#f4b7a8;
+    --white:#fffdfb;
+  }
+body{
+  color:var(--ink);
+  background:
+    radial-gradient(ellipse 42% 33% at 82% 22%,rgba(255,255,255,.92) 0 62%,transparent 63%),
+    radial-gradient(ellipse 48% 35% at 7% 4%,rgba(240,106,125,.88) 0 60%,transparent 61%),
+    radial-gradient(ellipse 54% 35% at 55% 0%,rgba(233,77,112,.88) 0 58%,transparent 59%),
+    linear-gradient(155deg,rgba(243,164,155,.78) 0 30%,rgba(255,237,226,.78) 30% 75%,rgba(247,211,196,.78) 100%),
+    url("back.jpg") center center / cover no-repeat fixed;
+  background-attachment:fixed,fixed,fixed,fixed,fixed;
+}
+  .shell{width:min(1160px,calc(100% - 28px));margin:24px auto 34px}
+  header{
+    max-width:1040px;
+    padding:12px 18px;
+    border-radius:20px 20px 8px 8px;
+    background:#e91e59;
+    color:#fff;
+    box-shadow:0 7px 0 rgba(16,75,120,.12);
+  }
+  header .eyebrow{color:#ffe8e8}
+  header h1{color:#123f68}
+  .brand-mark{
+    background:#123f68;
+    border:2px solid rgba(255,255,255,.65);
+    box-shadow:0 4px 0 #0b3153;
+  }
+  .sound-toggle{
+    color:#123f68;
+    background:#fff8f3;
+    border:2px solid rgba(255,255,255,.7);
+    box-shadow:0 3px 0 rgba(16,75,120,.15);
+  }
+  .sound-toggle[aria-pressed="true"]{background:#ffe0e5;border-color:#fff}
+  .island-card{
+    max-width:1040px;
+    border:0;
+    border-radius:12px 12px 34px 34px;
+    background:rgba(255, 250, 246, 0.6);
+    box-shadow:0 22px 55px rgba(31,66,101,.18);
+  }
+  .top-panel{
+    position:relative;
+    isolation:isolate;
+    overflow:hidden;
+    background:#eecbd;
+    color:#123f68;
+  }
+  .top-panel:before,.top-panel:after{
+    content:"";
+    position:absolute;
+    z-index:-1;
+    pointer-events:none;
+    border-radius:50%;
+  }
+  .top-panel:before{
+    width:76%;height:190px;right:-13%;top:-128px;
+    background:rgba(255,255,255,.18);
+    transform:rotate(-8deg);
+  }
+  .top-panel:after{
+    width:65%;height:150px;left:-16%;bottom:-116px;
+    background:#fff0e600;
+    transform:rotate(-8deg);
+  }
+  .top-panel .eyebrow{color:#2e2147}
+  h2{
+    color:#f52a5d;
+    text-shadow:0 3px 0 rgba(252, 199, 199, 0.705);
+    letter-spacing:-.045em;
+  }
+  .subtitle{color:#254f73}
+  .map{width:min(900px,100%);padding-top:25px;padding-bottom:12px}
+  .route-svg path{stroke:#efb2a8;stroke-width:10;stroke-dasharray:3 15}
+  .island{
+    width:clamp(70px,10.5vw,110px);
+    border-radius:48% 52% 45% 55% / 54% 43% 57% 46%;
+    border:3px solid #f3c1b3;
+    box-shadow:0 6px 0 #dba99b,0 0 0 5px rgba(255,255,255,.75);
+  }
+  .station:nth-child(2) .island{background:#ffe2d5;border-color:#f2b1a4;box-shadow:0 6px 0 #d99b91,0 0 0 5px rgba(255,255,255,.75)}
+  .station:nth-child(3) .island{background:#fbd5df;border-color:#ee9db2;box-shadow:0 6px 0 #d7869d,0 0 0 5px rgba(255,255,255,.75)}
+  .station:nth-child(4) .island{background:#dcecf0;border-color:#a8ceda;box-shadow:0 6px 0 #8eb9c9,0 0 0 5px rgba(255,255,255,.75)}
+  .station:nth-child(5) .island{background:#f8dfbd;border-color:#e9bd87;box-shadow:0 6px 0 #d4a56f,0 0 0 5px rgba(255,255,255,.75)}
+  .station-image{border:3px solid rgba(255,255,255,.92)}
+  .station-number{color:#69819a}
+  .station-name{color:#164b76}
+  .station-state{color:#71859a}
+  /* Die aktive Station bekommt einen klaren Fokus, ohne andere Stationen auszublenden. */
+  .station.active{z-index:8}
+  .station.active .island{
+    transform:translateY(-13px) scale(1.23);
+    border:5px solid #fff;
+    outline:4px solid #e91e59;
+    box-shadow:
+      0 10px 0 #104b78,
+      0 0 0 10px rgba(233,30,89,.20),
+      0 0 28px 13px rgba(233,30,89,.38);
+    animation:activeIslandPulse 2.4s ease-in-out infinite;
+  }
+  .station.active .island:before{
+    inset:-12px;
+    border:2px dashed rgba(233,30,89,.8);
+    border-radius:inherit;
+  }
+  .station.active .station-name{
+    color:#e91e59;
+    font-weight:950;
+    text-decoration:none;
+    background:#fff0e6;
+    border:2px solid #e91e59;
+    border-radius:999px;
+    padding:5px 10px;
+    margin-top:8px;
+    box-shadow:0 3px 0 rgba(16,75,120,.12);
+  }
+  .station.active .station-number{
+    color:#104b78;
+    font-weight:950;
+  }
+  .station.active .station-state{
+    color:#fff;
+    background:#104b78;
+    border-radius:999px;
+    padding:4px 9px;
+    font-weight:900;
+    box-shadow:0 3px 0 rgba(16,75,120,.18);
+  }
+  @keyframes activeIslandPulse{
+    0%,100%{filter:drop-shadow(0 0 0 rgba(233,30,89,0))}
+    50%{filter:drop-shadow(0 0 9px rgba(233,30,89,.34))}
+  }
+  .station.done .island{
+    background:#cce9e5;
+    border:4px solid #287db0;
+    box-shadow:0 6px 0 #104b78,0 0 0 4px rgba(40,125,176,.14);
+  }
+  .station.done .island:after{
+    background:#104b78;
+    border:2px solid #fff;
+  }
+  .station.done .station-name,.station.done .station-state{color:#176b76}
+  .route-wrap{padding:25px clamp(18px,5vw,52px) 30px}
+  .route-labels{color:#315a7d;font-size:.82rem}
+  .track{
+    height:25px;
+    background:#f4d9cf;
+    border:2px solid #fff;
+    box-shadow:inset 0 2px 4px #d8b9ae,0 4px 0 rgba(16,75,120,.10);
+  }
+  .fill{
+    background:linear-gradient(90deg,#287db0 0%,#e94d70 70%,#f4a49b 100%);
+    box-shadow:inset 0 2px 3px rgba(255,255,255,.45);
+  }
+  .lower{gap:18px;padding-bottom:32px}
+  .now-card,.controls-card{
+    border-radius:24px;
+    border:2px solid #f1c6bb;
+    background:#fff5ee;
+    box-shadow:0 6px 0 rgba(219,169,155,.35);
+  }
+  .now-card{
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(135deg,#fff0e6,#ffe0e3);
+    border:2px solid #ee9eaa;
+  }
+  .now-card:after{
+    content:"";
+    position:absolute;
+    width:130px;height:130px;
+    right:-48px;bottom:-75px;
+    border-radius:50%;
+    background:rgba(233,30,89,.10);
+  }
+  .small-label{color:#2875a6}
+  .current-name{
+    color:#e91e59;
+    font-size:clamp(1.55rem,3vw,2rem);
+    letter-spacing:-.025em;
+  }
+  .prompt{color:#4d6c87}
+  .primary{
+    background:#e91e59;
+    color:#fff;
+    box-shadow:0 4px 0 #a91442;
+  }
+  .secondary{
+    color:#104b78;
+    background:#fff;
+    border:1px solid #e8bdb3;
+  }
+  .reset-mini{color:#8293a2}
+  .reset-mini:hover{color:#e91e59}
+  .status{color:#55728d}
+  .end-message{
+    background:#dcefeb;
+    color:#104b78;
+    border:2px solid #9ccfc8;
+  }
+  footer{color:#315a7d}
+  @media(max-width:640px){
+    header{padding:10px 12px}
+    .station.active .island{transform:translateY(-7px) scale(1.12)}
+    .station.active .station-name{padding:4px 6px}
+    .station.active .station-state{padding:3px 5px}
+    .island{width:clamp(48px,15vw,76px)}
+    .map{padding-top:18px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .station.active .island{animation:none}
+  }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">
+      <div class="brand-mark" id="brandMark" aria-hidden="true">☼</div>
+      <div><div class="eyebrow">Digital Navigator</div><h1 style="font-size: small; color: #103">Sicher durch stürmische Gezeiten</h1></div>
+    </div>
+    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false">♫ Sound: Aus</button>
+  </header>
+
+  <main class="island-card">
+    <section class="top-panel">
+      <div class="eyebrow">Deine Reise zur digitalen Erholung</div>
+      <h2>CyberSpa Island</h2>
+      <p class="subtitle"></p>
+    </section>
+
+    <section class="map" aria-label="Inselroute mit fünf Stationen">
+      <svg class="route-svg" viewBox="0 0 800 150" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M80 54 C135 115, 185 108, 240 58 S350 10, 400 57 S540 117, 560 57 S680 15, 720 55" fill="none" stroke="#d5cba9" stroke-width="8" stroke-linecap="round" stroke-dasharray="2 13"/>
+      </svg>
+      <div class="stations" id="stations">
+        <div class="station active" data-index="0"><div class="island"><span class="symbol">🛟</span></div><div class="station-number">STATION 01</div><div class="station-name">Hilfsboote</div><div class="station-state">Hier starten</div></div>
+        <div class="station" data-index="1"><div class="island"><span class="symbol">🗼</span></div><div class="station-number">STATION 02</div><div class="station-name">Leuchtturm</div><div class="station-state">Kommt noch</div></div>
+        <div class="station" data-index="2"><div class="island"><span class="symbol">🍹</span></div><div class="station-number">STATION 03</div><div class="station-name">Cyberbar</div><div class="station-state">Kommt noch</div></div>
+        <div class="station" data-index="3"><div class="island"><span class="symbol">🌿</span></div><div class="station-number">STATION 04</div><div class="station-name">Inselgarten</div><div class="station-state">Kommt noch</div></div>
+        <div class="station" data-index="4"><div class="island"><span class="symbol">🔥</span></div><div class="station-number">STATION 05</div><div class="station-name">Lagerfeuer</div><div class="station-state">Kommt noch</div></div>
+      </div>
+    </section>
+
+    <section class="route-wrap" aria-label="Reisefortschritt">
+      <div class="route-labels"><span>Dein Inselpfad</span><span id="progressText">Noch ganz am Anfang</span></div>
+      <div class="track" role="progressbar" aria-label="Fortschritt der Inselreise" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar"><div class="fill" id="progressFill"></div></div>
+    </section>
+
+    <section class="lower">
+      <div class="now-card">
+        <div class="small-label">Du bist gerade hier</div>
+        <div class="current-name" id="currentName">Hilfsboote</div>
+        <div class="prompt" id="currentPrompt">Mach dich bereit und starte deine erste kleine Etappe. Dein CyberPass begleitet dich auf der Reise.</div>
+      </div>
+      <div class="controls-card">
+        <div class="small-label">Deine Reise</div>
+        <div class="buttons">
+          <button class="primary" id="startBtn" type="button">Reise starten</button>
+          <button class="secondary" id="pauseBtn" type="button" disabled>Pause</button>
+        </div>
+        <button class="reset-mini" id="resetBtn" type="button" aria-label="Reise neu starten">Neu starten ↺</button>
+        <div class="status" id="status" role="status" aria-live="polite">Bereit, wenn du es bist.</div>
+        <div class="sound-note"></div>
+      </div>
+    </section>
+    <div class="end-message" id="endMessage">🌅 Du hast alle fünf Stationen erreicht. Nimm einen guten Gedanken von der Insel mit!</div>
+  </main>
+  <footer>CyberSpa · Ein Moment zum Auftanken</footer>
+</div>
+
+<!-- Optional: Lege eine Datei namens beach.mp3 in denselben Ordner wie diese HTML-Datei. -->
+<audio id="beachAudio" src="beach.mp3" loop preload="none"></audio>
+
+<script>
+(() => {
+  const STATION_MS = 8 * 60 * 1000; // 8 Minuten pro Station
+  const TOTAL_MS = STATION_MS * 5; // 40 Minuten aktive Reise
+  const stations = [...document.querySelectorAll('.station')];
+  const fill = document.getElementById('progressFill');
+  const bar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  const currentName = document.getElementById('currentName');
+  const currentPrompt = document.getElementById('currentPrompt');
+  const status = document.getElementById('status');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const endMessage = document.getElementById('endMessage');
+  const soundToggle = document.getElementById('soundToggle');
+  const audio = document.getElementById('beachAudio');
+
+  const names = ['Hilfsboote','Leuchtturm','Cyberbar','Inselgarten','Lagerfeuer'];
+  const imageFiles = ['hilfsboote.png','leuchtturm.png','cyberbar.png','inselgarten.png','lagerfeuer.png'];
+
+  // Eigene quadratische Stationsbilder werden automatisch erkannt; bei fehlender Datei bleibt das Emoji sichtbar.
+  stations.forEach((station, index) => {
+    const island = station.querySelector('.island');
+    const img = new Image();
+    img.className = 'station-image';
+    img.alt = names[index];
+    img.onload = () => {
+      const fallback = island.querySelector('.symbol');
+      if (fallback) fallback.remove();
+      island.prepend(img);
+    };
+    img.src = imageFiles[index];
+  });
+
+  // Optionales eigenes Logo oben links.
+  const brandMark = document.getElementById('brandMark');
+  const logo = new Image();
+  logo.alt = 'CyberSpa Island';
+  logo.onload = () => { brandMark.textContent = ''; brandMark.appendChild(logo); };
+  logo.src = 'insel.png';
+
+  let elapsed = 0;
+  let running = false;
+  let started = false;
+  let lastStamp = null;
+  let raf = null;
+
+  function render() {
+    const progress = Math.min(100, elapsed / TOTAL_MS * 100);
+    const idx = Math.min(4, Math.floor(elapsed / STATION_MS));
+    fill.style.width = progress + '%';
+    bar.setAttribute('aria-valuenow', String(Math.round(progress)));
+    progressText.textContent = elapsed === 0 ? 'Noch ganz am Anfang' : elapsed >= TOTAL_MS ? 'Reise geschafft!' : (Math.round(progress)) + '% des Weges';
+    stations.forEach((el, i) => {
+      el.classList.toggle('active', i === idx && elapsed < TOTAL_MS);
+      el.classList.toggle('done', i < idx || elapsed >= TOTAL_MS);
+      el.querySelector('.station-state').textContent =
+        elapsed >= TOTAL_MS ? 'Geschafft' : i < idx ? 'Erreicht' : i === idx ? 'Du bist hier' : 'Kommt noch';
+    });
+    currentName.textContent = elapsed >= TOTAL_MS ? 'Reise geschafft!' : names[idx];
+    // Der Bereich unter dem Stationsnamen bleibt absichtlich leer.
+    if (elapsed >= TOTAL_MS) finish();
+  }
+
+  function tick(stamp) {
+    if (!running) return;
+    if (lastStamp !== null) elapsed += stamp - lastStamp;
+    lastStamp = stamp;
+    if (elapsed >= TOTAL_MS) elapsed = TOTAL_MS;
+    render();
+    if (elapsed >= TOTAL_MS) return;
+    raf = requestAnimationFrame(tick);
+  }
+  function start() {
+    if (elapsed >= TOTAL_MS) reset();
+    if (running) return;
+    running = true; started = true; lastStamp = null;
+    startBtn.textContent = 'Weiterreisen';
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = 'Pause';
+    status.textContent = 'Die Reise läuft. Lass dir Zeit und folge dem Inselpfad.';
+    endMessage.classList.remove('show');
+    raf = requestAnimationFrame(tick);
+  }
+  function pause() {
+    if (!running) return;
+    running = false; lastStamp = null;
+    if (raf) cancelAnimationFrame(raf);
+    pauseBtn.textContent = 'Weiter';
+    status.textContent = 'Kurze Pause. Wenn du bereit bist, geht die Reise weiter.';
+  }
+  function finish() {
+    running = false; lastStamp = null;
+    if (raf) cancelAnimationFrame(raf);
+    startBtn.textContent = 'Nochmal reisen';
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = 'Pause';
+    status.textContent = 'Alle Stationen liegen hinter dir.';
+    endMessage.classList.add('show');
+  }
+  function reset() {
+    running = false; started = false; elapsed = 0; lastStamp = null;
+    if (raf) cancelAnimationFrame(raf);
+    startBtn.textContent = 'Reise starten';
+    pauseBtn.disabled = true; pauseBtn.textContent = 'Pause';
+    status.textContent = 'Bereit, wenn du es bist.';
+    endMessage.classList.remove('show');
+    render();
+  }
+  startBtn.addEventListener('click', start);
+  pauseBtn.addEventListener('click', () => running ? pause() : start());
+  resetBtn.addEventListener('click', reset);
+
+  soundToggle.addEventListener('click', async () => {
+    if (audio.paused) {
+      try {
+        await audio.play();
+        soundToggle.textContent = '♫ Sound: An';
+        soundToggle.setAttribute('aria-pressed', 'true');
+      } catch (err) {
+        status.textContent = 'Bitte lege beach.mp3 neben die HTML-Datei und lade die Seite neu.';
+        soundToggle.textContent = '♫ Sound: Aus';
+        soundToggle.setAttribute('aria-pressed', 'false');
+      }
+    } else {
+      audio.pause();
+      soundToggle.textContent = '♫ Sound: Aus';
+      soundToggle.setAttribute('aria-pressed', 'false');
+    }
+  });
+  audio.addEventListener('error', () => {
+    if (soundToggle.getAttribute('aria-pressed') === 'true') {
+      soundToggle.textContent = '♫ Sound: Aus';
+      soundToggle.setAttribute('aria-pressed', 'false');
+    }
+  });
+  render();
+})();
+</script>
+</body>
+</html>
